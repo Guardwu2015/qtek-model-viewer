@@ -16777,9 +16777,6 @@ Viewer.prototype.setPose = function (time) {
 Viewer.prototype._updateClipAndSkeletons = function () {
     // Manually sync the transform for nodes not in skeleton
     this._clips.forEach(function (clip) {
-        if (clip.target.name === 'Dummy001') {
-            console.log(clip.target.position.z);
-        }
         if (clip.channels.position) {
             clip.target.position.setArray(clip.position);
         }
