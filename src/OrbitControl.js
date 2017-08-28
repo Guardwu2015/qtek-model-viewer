@@ -185,7 +185,9 @@ var OrbitControl = Base.extend(function () {
         dom.removeEventListener('mouseup', this._mouseUpHandler);
         dom.removeEventListener('mousewheel', this._mouseWheelHandler);
 
-        this.animation.removeEventListener('frame', this._update);
+        if (this.animation) {
+            this.animation.off('frame', this._update);
+        }
         this.stopAllAnimation();
     },
 

@@ -550,6 +550,7 @@ Viewer.prototype._loop = function (deltaTime) {
 Viewer.prototype.dispose = function () {
     this._disposed = true;
 
+    this.stop();
     if (this._shadowMapPass) {
         this._shadowMapPass.dispose(this._renderer);
     }
@@ -558,7 +559,6 @@ Viewer.prototype.dispose = function () {
     this._cameraControl.dispose();
     this.root.innerHTML = '';
 
-    this.stop();
 };
 
 module.exports = Viewer;
