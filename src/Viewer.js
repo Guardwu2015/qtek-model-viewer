@@ -522,6 +522,10 @@ Viewer.prototype._updateClipAndSkeletons = function () {
 };
 
 Viewer.prototype._loop = function (deltaTime) {
+    if (this._disposed) {
+        return;
+    }
+
     this._updateClipAndSkeletons();
     this._scene.update();
 
@@ -544,6 +548,8 @@ Viewer.prototype._loop = function (deltaTime) {
  * Dispose viewer.
  */
 Viewer.prototype.dispose = function () {
+    this._disposed = true;
+
     if (this._shadowMapPass) {
         this._shadowMapPass.dispose(this._renderer);
     }
@@ -552,7 +558,7 @@ Viewer.prototype.dispose = function () {
     this._cameraControl.dispose();
     this.root.innerHTML = '';
 
-    this._animation.stop();
+    this.stop();
 };
 
 module.exports = Viewer;
