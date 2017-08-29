@@ -20003,6 +20003,7 @@ module.exports = getBoundingBoxWithSkinning;
          * @return {boolean}
          */
         isRenderable: function() {
+            // TODO Shader ?
             return this.geometry && this.material && !this.invisible
                 && this.geometry.vertexCount > 0;
         },
@@ -21534,8 +21535,21 @@ module.exports = getBoundingBoxWithSkinning;
         var channels = this.channels;
         var len = channels.time.length;
         var key = -1;
+        // Only one frame
+        if (len === 1) {
+            if (channels.rotation) {
+                quat.copy(this.rotation, channels.rotation);
+            }
+            if (channels.position) {
+                vec3.copy(this.position, channels.position);
+            }
+            if (channels.scale) {
+                vec3.copy(this.scale, channels.scale);
+            }
+            return;
+        }
         // Clamp
-        if (time <= channels.time[0]) {
+        else if (time <= channels.time[0]) {
             time = channels.time[0];
             key = 0;
         }

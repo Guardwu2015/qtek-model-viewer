@@ -138,14 +138,14 @@ Export scene
 
 ```bash
 # exclude animation
-fbx2gltf.py -e animation -p 0 xxx.fbx
+python3.3 fbx2gltf.py -e animation -p 0 xxx.fbx
 ```
 
 Export animation
 
 ```bash
 # exclude scene, 0 to 20 second, 20 framerate.
-fbx2gltf.py -e scene -t 0,20 -f 20 -o xxx_ani.gltf xxx.fbx
+python3.3 fbx2gltf.py -e scene -t 0,20 -f 20 -o xxx_ani.gltf xxx.fbx
 ```
 
 Load scene and animation asynchronously
