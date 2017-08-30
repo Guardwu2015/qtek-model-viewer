@@ -18,6 +18,7 @@ var StaticGeometry = require('qtek/lib/StaticGeometry');
 var Task = require('qtek/lib/async/Task');
 var TaskGroup = require('qtek/lib/async/TaskGroup');
 var util = require('qtek/lib/core/util');
+var shaderLibrary = require('qtek/lib/shader/library');
 var colorUtil = require('zrender/lib/tool/color');
 
 var getBoundingBoxWithSkinning = require('./util/getBoundingBoxWithSkinning');
@@ -88,7 +89,6 @@ function createSkeletonDebugScene(skeleton) {
  * @param {HTMLDivElement} dom Root node
  * @param {Object} [opts]
  * @param {boolean} [opts.shadow=false] If enable shadow
- * @param {boolean} [opts.shader='lambert'] If enable shadow
  * @param {boolean} [opts.renderDebugSkeleton=false]
  */
 function Viewer(dom, opts) {
@@ -99,7 +99,6 @@ function Viewer(dom, opts) {
 Viewer.prototype.init = function (dom, opts) {
     opts = opts || {};
 
-    this._shaderName = opts.shader || 'lambert';
     this._renderDebugSkeleton = opts.renderDebugSkeleton;
 
     if (opts.shadow) {
@@ -163,6 +162,11 @@ Viewer.prototype.init = function (dom, opts) {
      */
     this._clips = [];
 
+    /**
+     * Map of materials
+     */
+    this._materialsMap = {};
+
     this._initLights();
 
     this.resize();
@@ -172,6 +176,8 @@ Viewer.prototype.init = function (dom, opts) {
      */
     this._mainLightAlpha = 45;
     this._mainLightBeta = 45;
+
+    this._shaderLib = shaderLibrary.createLibrary();
 };
 
 Viewer.prototype._initLights = function () {
@@ -293,6 +299,7 @@ Viewer.prototype.autoFitModel = function (fitSize) {
  * Load glTF model resource
  * @param {string} url Model url
  * @param {Object} [opts] 
+ * @param {Object} [opts.shader='standard'] 'standard'|'basic' 
  */
 Viewer.prototype.loadModel = function (url, opts) {
     opts = opts || {};
@@ -300,13 +307,14 @@ Viewer.prototype.loadModel = function (url, opts) {
     if (!url) {
         throw new Error('URL of model is not provided');
     }
-
+    var shaderName = opts.shader || 'standard';
     var loader = new GLTFLoader({
         rootNode: new Node(),
-        shaderName: 'qtek.' + this._shaderName,
+        shaderName: 'qtek.' + shaderName,
         textureRootPath: opts.textureRootPath,
         bufferRootPath: opts.bufferRootPath,
-        crossOrigin: 'Anonymous'
+        crossOrigin: 'Anonymous',
+        shaderLibrary: this._shaderLib
     });
     loader.load(url);
 
@@ -327,9 +335,15 @@ Viewer.prototype.loadModel = function (url, opts) {
                 triangleCount += mesh.geometry.triangleCount;
                 vertexCount += mesh.geometry.vertexCount;
             }
-        });
+            if (mesh.material) {
+                var material = mesh.material;
+                // Avoid name duplicate
+                this._materialsMap[material.name] = this._materialsMap[material.name] || [];
+                this._materialsMap[material.name].push(material);
+            }
+        }, this);
         meshNeedsSplit.forEach(function (mesh) {
-            meshUtil.splitByJoints(mesh, 15, true, loader.shaderLibrary, 'qtek.' + this._shaderName);
+            meshUtil.splitByJoints(mesh, 15, true, this._shaderLib, 'qtek.' + shaderName);
         }, this);
         res.rootNode.traverse(function (mesh) {
             if (mesh.geometry) {
@@ -478,6 +492,26 @@ Viewer.prototype.setAmbientLight = function (opts) {
     if (opts.intensity != null) {
         this._ambientLight.intensity = opts.intensity;
     }
+};
+
+/**
+ * @param {string} name
+ * @param {Object} materialCfg
+ * @param {boolean} [materialCfg.transparent]
+ */
+Viewer.prototype.setMaterial = function (name, materialCfg) {
+    materialCfg = materialCfg || {};
+    var materials = this._materialsMap[name];
+    if (!materials) {
+        console.warn('Material %s not exits', name);
+        return;
+    }
+    materials.forEach(function (mat) {
+        if (materialCfg.transparent != null) {
+            mat.transparent = !!materialCfg.transparent;
+            mat.depthMask = !materialCfg.transparent;
+        }
+    }, this);
 };
 
 /**
