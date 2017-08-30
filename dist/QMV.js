@@ -6401,7 +6401,7 @@ module.exports = {
 
     var Base = __webpack_require__(1);
     var util = __webpack_require__(5);
-    var Cache = __webpack_require__(18);
+    var Cache = __webpack_require__(19);
     var vendor = __webpack_require__(9);
     var glMatrix = __webpack_require__(0);
     var glInfo = __webpack_require__(7);
@@ -9623,7 +9623,7 @@ module.exports = {
 
     var Base = __webpack_require__(1);
     var glenum = __webpack_require__(2);
-    var Cache = __webpack_require__(18);
+    var Cache = __webpack_require__(19);
     var glinfo = __webpack_require__(7);
 
     /**
@@ -9925,7 +9925,7 @@ module.exports = {
 
     var Renderable = __webpack_require__(54);
     var glenum = __webpack_require__(2);
-    var Texture2D = __webpack_require__(16);
+    var Texture2D = __webpack_require__(17);
 
     /**
      * @constructor qtek.Mesh
@@ -10763,6 +10763,154 @@ module.exports = {
 /* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
+/**
+ * @export{Object} library
+ */
+
+
+    var Shader = __webpack_require__(6);
+    var util = __webpack_require__(5);
+
+    var _library = {};
+
+    /**
+     * @export qtek.shader.library~Libaray
+     */
+    function ShaderLibrary () {
+        this._pool = {};
+    }
+
+    /**
+     * ### Builin shaders
+     * + qtek.standard
+     * + qtek.basic
+     * + qtek.lambert
+     * + qtek.phong
+     * + qtek.wireframe
+     *
+     * @namespace qtek.shader.library
+     */
+    /**
+     *
+     * Get shader from library. use shader name and option as hash key.
+     *
+     * @param {string} name
+     * @param {Object|string|Array.<string>} [option]
+     * @return {qtek.Shader}
+     *
+     * @example
+     *     qtek.shader.library.get('qtek.phong', 'diffuseMap', 'normalMap');
+     *     qtek.shader.library.get('qtek.phong', ['diffuseMap', 'normalMap']);
+     *     qtek.shader.library.get('qtek.phong', {
+     *         textures: ['diffuseMap'],
+     *         vertexDefines: {},
+     *         fragmentDefines: {}
+     *     })
+     */
+    ShaderLibrary.prototype.get = function(name, option) {
+        var enabledTextures = [];
+        var vertexDefines = {};
+        var fragmentDefines = {};
+        if (typeof(option) === 'string') {
+            enabledTextures = Array.prototype.slice.call(arguments, 1);
+        }
+        else if (Object.prototype.toString.call(option) == '[object Object]') {
+            enabledTextures = option.textures || [];
+            vertexDefines = option.vertexDefines || {};
+            fragmentDefines = option.fragmentDefines || {};
+        }
+        else if (option instanceof Array) {
+            enabledTextures = option;
+        }
+        var vertexDefineKeys = Object.keys(vertexDefines);
+        var fragmentDefineKeys = Object.keys(fragmentDefines);
+        enabledTextures.sort();
+        vertexDefineKeys.sort();
+        fragmentDefineKeys.sort();
+
+        var keyArr = [name];
+        keyArr = keyArr.concat(enabledTextures);
+        for (var i = 0; i < vertexDefineKeys.length; i++) {
+            keyArr.push(
+                vertexDefineKeys[i],
+                vertexDefines[vertexDefineKeys[i]]
+            );
+        }
+        for (var i = 0; i < fragmentDefineKeys.length; i++) {
+            keyArr.push(
+                fragmentDefineKeys[i],
+                fragmentDefines[fragmentDefineKeys[i]]
+            );
+        }
+        var key = keyArr.join('_');
+
+        if (this._pool[key]) {
+            return this._pool[key];
+        }
+        else {
+            var source = _library[name];
+            if (!source) {
+                console.error('Shader "' + name + '"' + ' is not in the library');
+                return;
+            }
+            var shader = new Shader({
+                'vertex': source.vertex,
+                'fragment': source.fragment
+            });
+            for (var i = 0; i < enabledTextures.length; i++) {
+                shader.enableTexture(enabledTextures[i]);
+            }
+            for (var name in vertexDefines) {
+                shader.define('vertex', name, vertexDefines[name]);
+            }
+            for (var name in fragmentDefines) {
+                shader.define('fragment', name, fragmentDefines[name]);
+            }
+            this._pool[key] = shader;
+            return shader;
+        }
+    };
+
+    /**
+     * Clear shaders
+     */
+    ShaderLibrary.prototype.clear = function() {
+        this._pool = {};
+    };
+
+    /**
+     * @memberOf qtek.shader.library
+     * @param  {string} name
+     * @param  {string} vertex - Vertex shader code
+     * @param  {string} fragment - Fragment shader code
+     */
+    function template(name, vertex, fragment) {
+        _library[name] = {
+            vertex: vertex,
+            fragment: fragment
+        };
+    }
+
+    var defaultLibrary = new ShaderLibrary();
+
+    module.exports = {
+        createLibrary: function () {
+            return new ShaderLibrary();
+        },
+        get: function () {
+            return defaultLibrary.get.apply(defaultLibrary, arguments);
+        },
+        template: template,
+        clear: function () {
+            return defaultLibrary.clear();
+        }
+    };
+
+
+/***/ }),
+/* 17 */
+/***/ (function(module, exports, __webpack_require__) {
+
 
 
     var Texture = __webpack_require__(13);
@@ -10993,7 +11141,7 @@ module.exports = {
 
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11252,7 +11400,7 @@ module.exports = {
 
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11369,154 +11517,6 @@ module.exports = {
 
     module.exports = Cache;
 
-
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/**
- * @export{Object} library
- */
-
-
-    var Shader = __webpack_require__(6);
-    var util = __webpack_require__(5);
-
-    var _library = {};
-
-    /**
-     * @export qtek.shader.library~Libaray
-     */
-    function ShaderLibrary () {
-        this._pool = {};
-    }
-
-    /**
-     * ### Builin shaders
-     * + qtek.standard
-     * + qtek.basic
-     * + qtek.lambert
-     * + qtek.phong
-     * + qtek.wireframe
-     *
-     * @namespace qtek.shader.library
-     */
-    /**
-     *
-     * Get shader from library. use shader name and option as hash key.
-     *
-     * @param {string} name
-     * @param {Object|string|Array.<string>} [option]
-     * @return {qtek.Shader}
-     *
-     * @example
-     *     qtek.shader.library.get('qtek.phong', 'diffuseMap', 'normalMap');
-     *     qtek.shader.library.get('qtek.phong', ['diffuseMap', 'normalMap']);
-     *     qtek.shader.library.get('qtek.phong', {
-     *         textures: ['diffuseMap'],
-     *         vertexDefines: {},
-     *         fragmentDefines: {}
-     *     })
-     */
-    ShaderLibrary.prototype.get = function(name, option) {
-        var enabledTextures = [];
-        var vertexDefines = {};
-        var fragmentDefines = {};
-        if (typeof(option) === 'string') {
-            enabledTextures = Array.prototype.slice.call(arguments, 1);
-        }
-        else if (Object.prototype.toString.call(option) == '[object Object]') {
-            enabledTextures = option.textures || [];
-            vertexDefines = option.vertexDefines || {};
-            fragmentDefines = option.fragmentDefines || {};
-        }
-        else if (option instanceof Array) {
-            enabledTextures = option;
-        }
-        var vertexDefineKeys = Object.keys(vertexDefines);
-        var fragmentDefineKeys = Object.keys(fragmentDefines);
-        enabledTextures.sort();
-        vertexDefineKeys.sort();
-        fragmentDefineKeys.sort();
-
-        var keyArr = [name];
-        keyArr = keyArr.concat(enabledTextures);
-        for (var i = 0; i < vertexDefineKeys.length; i++) {
-            keyArr.push(
-                vertexDefineKeys[i],
-                vertexDefines[vertexDefineKeys[i]]
-            );
-        }
-        for (var i = 0; i < fragmentDefineKeys.length; i++) {
-            keyArr.push(
-                fragmentDefineKeys[i],
-                fragmentDefines[fragmentDefineKeys[i]]
-            );
-        }
-        var key = keyArr.join('_');
-
-        if (this._pool[key]) {
-            return this._pool[key];
-        }
-        else {
-            var source = _library[name];
-            if (!source) {
-                console.error('Shader "' + name + '"' + ' is not in the library');
-                return;
-            }
-            var shader = new Shader({
-                'vertex': source.vertex,
-                'fragment': source.fragment
-            });
-            for (var i = 0; i < enabledTextures.length; i++) {
-                shader.enableTexture(enabledTextures[i]);
-            }
-            for (var name in vertexDefines) {
-                shader.define('vertex', name, vertexDefines[name]);
-            }
-            for (var name in fragmentDefines) {
-                shader.define('fragment', name, fragmentDefines[name]);
-            }
-            this._pool[key] = shader;
-            return shader;
-        }
-    };
-
-    /**
-     * Clear shaders
-     */
-    ShaderLibrary.prototype.clear = function() {
-        this._pool = {};
-    };
-
-    /**
-     * @memberOf qtek.shader.library
-     * @param  {string} name
-     * @param  {string} vertex - Vertex shader code
-     * @param  {string} fragment - Fragment shader code
-     */
-    function template(name, vertex, fragment) {
-        _library[name] = {
-            vertex: vertex,
-            fragment: fragment
-        };
-    }
-
-    var defaultLibrary = new ShaderLibrary();
-
-    module.exports = {
-        createLibrary: function () {
-            return new ShaderLibrary();
-        },
-        get: function () {
-            return defaultLibrary.get.apply(defaultLibrary, arguments);
-        },
-        template: template,
-        clear: function () {
-            return defaultLibrary.clear();
-        }
-    };
 
 
 /***/ }),
@@ -12998,7 +12998,7 @@ module.exports = {
     var vendor = __webpack_require__(9);
     var BoundingBox = __webpack_require__(3);
     var Matrix4 = __webpack_require__(15);
-    var shaderLibrary = __webpack_require__(19);
+    var shaderLibrary = __webpack_require__(16);
     var Material = __webpack_require__(11);
     var Vector2 = __webpack_require__(38);
 
@@ -14835,7 +14835,7 @@ module.exports = {
 
 
 
-    var Clip = __webpack_require__(17);
+    var Clip = __webpack_require__(18);
 
     var glMatrix = __webpack_require__(0);
     var quat = glMatrix.quat;
@@ -16804,6 +16804,7 @@ var StaticGeometry = __webpack_require__(12);
 var Task = __webpack_require__(31);
 var TaskGroup = __webpack_require__(61);
 var util = __webpack_require__(5);
+var shaderLibrary = __webpack_require__(16);
 var colorUtil = __webpack_require__(46);
 
 var getBoundingBoxWithSkinning = __webpack_require__(51);
@@ -16874,7 +16875,6 @@ function createSkeletonDebugScene(skeleton) {
  * @param {HTMLDivElement} dom Root node
  * @param {Object} [opts]
  * @param {boolean} [opts.shadow=false] If enable shadow
- * @param {boolean} [opts.shader='lambert'] If enable shadow
  * @param {boolean} [opts.renderDebugSkeleton=false]
  */
 function Viewer(dom, opts) {
@@ -16885,7 +16885,6 @@ function Viewer(dom, opts) {
 Viewer.prototype.init = function (dom, opts) {
     opts = opts || {};
 
-    this._shaderName = opts.shader || 'lambert';
     this._renderDebugSkeleton = opts.renderDebugSkeleton;
 
     if (opts.shadow) {
@@ -16949,6 +16948,11 @@ Viewer.prototype.init = function (dom, opts) {
      */
     this._clips = [];
 
+    /**
+     * Map of materials
+     */
+    this._materialsMap = {};
+
     this._initLights();
 
     this.resize();
@@ -16958,6 +16962,8 @@ Viewer.prototype.init = function (dom, opts) {
      */
     this._mainLightAlpha = 45;
     this._mainLightBeta = 45;
+
+    this._shaderLib = shaderLibrary.createLibrary();
 };
 
 Viewer.prototype._initLights = function () {
@@ -17079,6 +17085,7 @@ Viewer.prototype.autoFitModel = function (fitSize) {
  * Load glTF model resource
  * @param {string} url Model url
  * @param {Object} [opts] 
+ * @param {Object} [opts.shader='standard'] 'standard'|'basic' 
  */
 Viewer.prototype.loadModel = function (url, opts) {
     opts = opts || {};
@@ -17086,13 +17093,14 @@ Viewer.prototype.loadModel = function (url, opts) {
     if (!url) {
         throw new Error('URL of model is not provided');
     }
-
+    var shaderName = opts.shader || 'standard';
     var loader = new GLTFLoader({
         rootNode: new Node(),
-        shaderName: 'qtek.' + this._shaderName,
+        shaderName: 'qtek.' + shaderName,
         textureRootPath: opts.textureRootPath,
         bufferRootPath: opts.bufferRootPath,
-        crossOrigin: 'Anonymous'
+        crossOrigin: 'Anonymous',
+        shaderLibrary: this._shaderLib
     });
     loader.load(url);
 
@@ -17113,9 +17121,15 @@ Viewer.prototype.loadModel = function (url, opts) {
                 triangleCount += mesh.geometry.triangleCount;
                 vertexCount += mesh.geometry.vertexCount;
             }
-        });
+            if (mesh.material) {
+                var material = mesh.material;
+                // Avoid name duplicate
+                this._materialsMap[material.name] = this._materialsMap[material.name] || [];
+                this._materialsMap[material.name].push(material);
+            }
+        }, this);
         meshNeedsSplit.forEach(function (mesh) {
-            meshUtil.splitByJoints(mesh, 15, true, loader.shaderLibrary, 'qtek.' + this._shaderName);
+            meshUtil.splitByJoints(mesh, 15, true, this._shaderLib, 'qtek.' + shaderName);
         }, this);
         res.rootNode.traverse(function (mesh) {
             if (mesh.geometry) {
@@ -17264,6 +17278,30 @@ Viewer.prototype.setAmbientLight = function (opts) {
     if (opts.intensity != null) {
         this._ambientLight.intensity = opts.intensity;
     }
+};
+
+/**
+ * @param {string} name
+ * @param {Object} materialCfg
+ * @param {boolean} [materialCfg.transparent]
+ * @param {boolean} [materialCfg.alphaCutoff]
+ */
+Viewer.prototype.setMaterial = function (name, materialCfg) {
+    materialCfg = materialCfg || {};
+    var materials = this._materialsMap[name];
+    if (!materials) {
+        console.warn('Material %s not exits', name);
+        return;
+    }
+    materials.forEach(function (mat) {
+        if (materialCfg.transparent != null) {
+            mat.transparent = !!materialCfg.transparent;
+            mat.depthMask = !materialCfg.transparent;
+        }
+        if (materialCfg.alphaCutoff != null) {
+            mat.set('alphaCutoff', materialCfg.alphaCutoff);
+        }
+    }, this);
 };
 
 /**
@@ -19178,7 +19216,7 @@ module.exports = getBoundingBoxWithSkinning;
     var TextureCube = __webpack_require__(20);
     var glinfo = __webpack_require__(7);
     var glenum = __webpack_require__(2);
-    var Cache = __webpack_require__(18);
+    var Cache = __webpack_require__(19);
 
     var KEY_FRAMEBUFFER = 'framebuffer';
     var KEY_RENDERBUFFER = 'renderbuffer';
@@ -19578,7 +19616,7 @@ module.exports = getBoundingBoxWithSkinning;
 
     var Base = __webpack_require__(1);
     var glenum = __webpack_require__(2);
-    var Cache = __webpack_require__(18);
+    var Cache = __webpack_require__(19);
     var vendor = __webpack_require__(9);
 
     function getArrayCtorByType (type) {
@@ -20863,7 +20901,7 @@ module.exports = getBoundingBoxWithSkinning;
  */
 
 
-    var Clip = __webpack_require__(17);
+    var Clip = __webpack_require__(18);
 
     var arraySlice = Array.prototype.slice;
 
@@ -21405,7 +21443,7 @@ module.exports = getBoundingBoxWithSkinning;
 // TODO Sync target transform
 
 
-    var Clip = __webpack_require__(17);
+    var Clip = __webpack_require__(18);
     var TransformClip = __webpack_require__(30);
 
     var glMatrix = __webpack_require__(0);
@@ -21761,7 +21799,7 @@ module.exports = getBoundingBoxWithSkinning;
 
 
 
-    var Clip = __webpack_require__(17);
+    var Clip = __webpack_require__(18);
 
     var TransformClip = __webpack_require__(30);
 
@@ -22789,7 +22827,7 @@ module.exports = getBoundingBoxWithSkinning;
 
 
 
-    var Texture2D = __webpack_require__(16);
+    var Texture2D = __webpack_require__(17);
     var glenum = __webpack_require__(2);
     var util = __webpack_require__(5);
 
@@ -23405,9 +23443,9 @@ module.exports = getBoundingBoxWithSkinning;
     var Mesh = __webpack_require__(14);
     var Node = __webpack_require__(8);
     var Texture = __webpack_require__(13);
-    var Texture2D = __webpack_require__(16);
+    var Texture2D = __webpack_require__(17);
     var TextureCube = __webpack_require__(20);
-    var shaderLibrary = __webpack_require__(19);
+    var shaderLibrary = __webpack_require__(16);
     var Skeleton = __webpack_require__(55);
     var Joint = __webpack_require__(26);
     var PerspectiveCamera = __webpack_require__(22);
@@ -25659,11 +25697,11 @@ module.exports = getBoundingBoxWithSkinning;
     var SpotLight = __webpack_require__(36);
     var DirectionalLight = __webpack_require__(23);
     var PointLight = __webpack_require__(35);
-    var shaderLibrary = __webpack_require__(19);
+    var shaderLibrary = __webpack_require__(16);
     var Material = __webpack_require__(11);
     var FrameBuffer = __webpack_require__(52);
     var Texture = __webpack_require__(13);
-    var Texture2D = __webpack_require__(16);
+    var Texture2D = __webpack_require__(17);
     var TextureCube = __webpack_require__(20);
     var PerspectiveCamera = __webpack_require__(22);
     var OrthoCamera = __webpack_require__(21);
@@ -26541,7 +26579,7 @@ module.exports = getBoundingBoxWithSkinning;
 
 
 
-    var library = __webpack_require__(19);
+    var library = __webpack_require__(16);
     var Shader = __webpack_require__(6);
 
 
