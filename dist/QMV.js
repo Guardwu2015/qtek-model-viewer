@@ -9959,6 +9959,9 @@ module.exports = {
             shader = shader || this.material.shader;
             // Set pose matrices of skinned mesh
             if (this.skeleton) {
+                // TODO Multiple mesh share same skeleton
+                this.skeleton.update();
+
                 var skinMatricesArray = this.skeleton.getSubSkinMatrices(this.__GUID__, this.joints);
 
                 if (this.useSkinMatricesTexture) {
@@ -11116,7 +11119,7 @@ module.exports = {
          * @param  {number} time
          * @return {string}
          */
-        step: function (time, deltaTime) {
+        step: function (time, deltaTime, silent) {
             if (!this._initialized) {
                 this._startTime = time + this.delay;
                 this._initialized = true;
@@ -11150,7 +11153,10 @@ module.exports = {
             else {
                 schedule = percent;
             }
-            this.fire('frame', schedule);
+
+            if (!silent) {
+                this.fire('frame', schedule);
+            }
 
             if (percent === 1) {
                 if (this._loop && this._loopRemained > 0) {
@@ -14897,14 +14903,19 @@ module.exports = {
 
     TransformClip.prototype.constructor = TransformClip;
 
-    TransformClip.prototype.step = function (time, dTime) {
+    TransformClip.prototype.step = function (time, dTime, silent) {
 
-        var ret = Clip.prototype.step.call(this, time, dTime);
+        var ret = Clip.prototype.step.call(this, time, dTime, true);
 
         if (ret !== 'finish') {
             this.setTime(this.getElapsedTime());
         }
 
+        // PENDING Schedule
+        if (!silent) {
+            this.fire('frame');
+        }
+        
         return ret;
     };
 
@@ -17008,17 +17019,24 @@ Viewer.prototype._setAnimationClips = function (clips) {
     }, this);
 
     var clipsList = [];
+    // TODO
+    var maxTime = 0;
     for (var clipId in clips) {
         var clip = clips[clipId];
         if (!clip.target) {
             clip.target = this._scene.getNode(clip.name);
         }
+        maxTime = Math.max(maxTime, clip.life);
 
         clipsList.push(clip);
 
         this._animation.addClip(clip);
         clips[clipId].setLoop(true);
     }
+
+    clipsList.forEach(function (clip) {
+        clip.life = maxTime;
+    });
 
     this._clips = clipsList;
 };
@@ -20318,17 +20336,11 @@ module.exports = getBoundingBoxWithSkinning;
             name: '',
 
             /**
-             * root joints
-             * @type {Array.<qtek.Joint>}
-             */
-            // PENDING If needs this?
-            roots: [],
-
-            /**
              * joints
              * @type {Array.<qtek.Joint>}
              */
             joints: [],
+
 
             _clips: [],
 
@@ -20441,9 +20453,6 @@ module.exports = getBoundingBoxWithSkinning;
             var m4 = mat4.create();
 
             return function () {
-                for (var i = 0; i < this.roots.length; i++) {
-                    this.roots[i].node.update(true);
-                }
                 this._invBindPoseMatricesArray = new Float32Array(this.joints.length * 16);
                 this._skinMatricesArray = new Float32Array(this.joints.length * 16);
 
@@ -20494,10 +20503,6 @@ module.exports = getBoundingBoxWithSkinning;
         update: (function () {
             var m4 = mat4.create();
             return function () {
-                for (var i = 0; i < this.roots.length; i++) {
-                    this.roots[i].node.update(true);
-                }
-
                 for (var i = 0; i < this.joints.length; i++) {
                     var joint = this.joints[i];
                     mat4.multiply(
@@ -20592,9 +20597,6 @@ module.exports = getBoundingBoxWithSkinning;
                     console.warn('Something wrong in clone, may be the skeleton root nodes is not mounted on the cloned root node.')
                 }
                 skeleton.joints.push(newJoint);
-            }
-            for (var i = 0; i < this.roots.length; i++) {
-                skeleton.roots.push(skeleton.joints[this.roots[i].index]);
             }
 
             if (this._invBindPoseMatricesArray) {
@@ -20733,7 +20735,7 @@ module.exports = getBoundingBoxWithSkinning;
             var deferredClips = [];
             for (var i = 0; i < len; i++) {
                 var clip = clips[i];
-                var e = clip.step(time, delta);
+                var e = clip.step(time, delta, false);
                 // Throw out the events need to be called after
                 // stage.render, like finish
                 if (e) {
@@ -21517,12 +21519,17 @@ module.exports = getBoundingBoxWithSkinning;
 
     SamplerClip.prototype.constructor = SamplerClip;
 
-    SamplerClip.prototype.step = function (time, dTime) {
+    SamplerClip.prototype.step = function (time, dTime, silent) {
 
-        var ret = Clip.prototype.step.call(this, time, dTime);
+        var ret = Clip.prototype.step.call(this, time, dTime, true);
 
         if (ret !== 'finish') {
             this.setTime(this.getElapsedTime());
+        }
+
+        // PENDING Schedule
+        if (!silent) {
+            this.fire('frame');
         }
 
         return ret;
@@ -21807,14 +21814,19 @@ module.exports = getBoundingBoxWithSkinning;
 
     SkinningClip.prototype.constructor = SkinningClip;
 
-    SkinningClip.prototype.step = function(time, dTime) {
+    SkinningClip.prototype.step = function(time, dTime, silent) {
 
-        var ret = Clip.prototype.step.call(this, time, dTime);
+        var ret = Clip.prototype.step.call(this, time, dTime, true);
 
         if (ret !== 'finish') {
             this.setTime(this.getElapsedTime());
         }
 
+        // PENDING Schedule
+        if (!silent) {
+            this.fire('frame');
+        }
+        
         return ret;
     };
 
@@ -23812,6 +23824,7 @@ module.exports = getBoundingBoxWithSkinning;
                         var rootJoint = bindNodeToJoint(jointsMap, rootNodes[i], -1, rootNode);
                         // Root joint may not in the skeleton
                         if (rootJoint) {
+                            skeleton.roots = skeleton.roots || [];
                             skeleton.roots.push(rootJoint);
                         }
                     }

@@ -233,17 +233,24 @@ Viewer.prototype._setAnimationClips = function (clips) {
     }, this);
 
     var clipsList = [];
+    // TODO
+    var maxTime = 0;
     for (var clipId in clips) {
         var clip = clips[clipId];
         if (!clip.target) {
             clip.target = this._scene.getNode(clip.name);
         }
+        maxTime = Math.max(maxTime, clip.life);
 
         clipsList.push(clip);
 
         this._animation.addClip(clip);
         clips[clipId].setLoop(true);
     }
+
+    clipsList.forEach(function (clip) {
+        clip.life = maxTime;
+    });
 
     this._clips = clipsList;
 };
