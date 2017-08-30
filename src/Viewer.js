@@ -498,6 +498,7 @@ Viewer.prototype.setAmbientLight = function (opts) {
  * @param {string} name
  * @param {Object} materialCfg
  * @param {boolean} [materialCfg.transparent]
+ * @param {boolean} [materialCfg.alphaCutoff]
  */
 Viewer.prototype.setMaterial = function (name, materialCfg) {
     materialCfg = materialCfg || {};
@@ -510,6 +511,9 @@ Viewer.prototype.setMaterial = function (name, materialCfg) {
         if (materialCfg.transparent != null) {
             mat.transparent = !!materialCfg.transparent;
             mat.depthMask = !materialCfg.transparent;
+        }
+        if (materialCfg.alphaCutoff != null) {
+            mat.set('alphaCutoff', materialCfg.alphaCutoff);
         }
     }, this);
 };

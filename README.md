@@ -14,7 +14,12 @@ var viewer = new QMV.Viewer(document.getElementById('main'), {
 // Load a glTF model
 // Model will be fit in 10x10x10 automatically after load.
 // Return an eventful object.
-viewer.loadModel('asset/xiniu/xiniu_walk_as.gltf')
+viewer.loadModel('asset/xiniu/xiniu_walk_as.gltf', {
+        // 'standard'|'basic'
+        shader: 'standard',
+        // Alpha test threshold.
+        alphaCutoff: 0.9
+    })
     // Model loaded. not include textures.
     .on('loadmodel', function (modelStat) {
         // Set camera options.
@@ -60,6 +65,14 @@ viewer.loadModel('asset/xiniu/xiniu_walk_as.gltf')
         viewer.setAmbientLight({
             // Ambient light intensity
             intensity: 0.8
+        });
+
+        // Set single material
+        viewer.setMaterial('some_mat_name', {
+            // If transparent
+            transparent: false,
+            // Alpha test threshold for this material
+            alphaCutoff: 0.1
         });
 
         viewer.start();
