@@ -17085,7 +17085,7 @@ Viewer.prototype.autoFitModel = function (fitSize) {
  * Load glTF model resource
  * @param {string} url Model url
  * @param {Object} [opts] 
- * @param {Object} [opts.shader='standard'] 'standard'|'basic' 
+ * @param {Object} [opts.shader='lambert'] 'standard'|'lambert'|'basic' 
  */
 Viewer.prototype.loadModel = function (url, opts) {
     opts = opts || {};
@@ -17093,7 +17093,7 @@ Viewer.prototype.loadModel = function (url, opts) {
     if (!url) {
         throw new Error('URL of model is not provided');
     }
-    var shaderName = opts.shader || 'standard';
+    var shaderName = opts.shader || 'lambert';
     var loader = new GLTFLoader({
         rootNode: new Node(),
         shaderName: 'qtek.' + shaderName,

@@ -15,7 +15,7 @@ var viewer = new QMV.Viewer(document.getElementById('main'), {
 // Model will be fit in 10x10x10 automatically after load.
 // Return an eventful object.
 viewer.loadModel('asset/xiniu/xiniu_walk_as.gltf', {
-        // 'standard'|'basic'
+        // 'standard'|'lambert'|'basic'
         shader: 'standard',
         // Alpha test threshold.
         alphaCutoff: 0.9
