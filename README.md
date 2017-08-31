@@ -6,9 +6,7 @@ Simple 3D model viewer based on [QTEK](https://github.com/pissang/qtek)
 
 ```js
 var viewer = new QMV.Viewer(document.getElementById('main'), {
-    shadow: true,
-    // Shading mode. 'standard'|'lambert'
-    shader: 'standard'
+    shadow: true
 });
 
 // Load a glTF model
